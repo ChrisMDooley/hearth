@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
             registerType: 'autoUpdate',
             // The site is behind a login, so the manifest must be fetched with cookies.
             useCredentials: true,
-            includeAssets: ['icons/icon.svg'],
+            includeAssets: ['icons/icon.svg', 'icons/apple-touch-icon.png'],
             manifest: {
               name: 'Hearth — our family baking book',
               short_name: 'Hearth',
