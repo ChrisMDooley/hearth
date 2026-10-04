@@ -66,3 +66,25 @@ describe('timers', () => {
     expect(findTimers('Bake for 25 min')[0].seconds).toBe(1500)
   })
 })
+
+import { displayIngredient } from './units'
+describe('dual measures', () => {
+  const line = (l: string, scale: number, sys: 'metric' | 'us') => {
+    const r = parseIngredientLine(l)!
+    const d = displayIngredient(r.quantity!, r.altQuantity, ingredientById(r.ingredientId), scale, sys)
+    return `${d.approx ? '≈' : ''}${d.amount} ${d.unit}`.trim() + (d.secondary ? ` (${d.secondary})` : '')
+  }
+  it('parses the published cup measure', () => {
+    expect(parseIngredientLine('375 g sourdough discard (1½ cups)')).toMatchObject({ name: 'sourdough discard', ingredientId: 'starter', quantity: { amount: 375, unit: 'g' }, altQuantity: { amount: 1.5, unit: 'cup' } })
+    expect(parseIngredientLine('112 g olive oil (½ cup), split')).toMatchObject({ name: 'olive oil', note: 'split', altQuantity: { unit: 'cup' } })
+    expect(parseIngredientLine('128 g butter (9 tbsp — 1 for the pan)')).toMatchObject({ note: '1 for the pan', altQuantity: { amount: 9, unit: 'tbsp' } })
+    expect(parseIngredientLine('350 g mashed ripe banana (3)')).toMatchObject({ note: '3' })
+  })
+  it('uses the stored measure for each system, exactly', () => {
+    expect(line('250 g discard (1 cup)', 1, 'metric')).toBe('250 g (1 cup)')
+    expect(line('250 g discard (1 cup)', 1, 'us')).toBe('1 cup (250 g)')
+    expect(line('250 g discard (1 cup)', 2, 'us')).toBe('2 cups (500 g)')
+    expect(line('3 tsp dried yeast (9 g)', 1, 'metric')).toBe('9 g (3 tsp)')
+    expect(line('3 tsp dried yeast (9 g)', 1, 'us')).toBe('3 tsp (9 g)')
+  })
+})

@@ -53,15 +53,28 @@ export function EditorPage() {
   const { id } = useParams()
   const s = useStore()
   const loc = useLocation()
-  const state = loc.state as { draft?: Recipe; collections?: string[] } | null
+  const state = loc.state as { draft?: Recipe; collections?: string[]; imported?: Imported } | null
   const existing = id ? s.recipe(id) : undefined
   const me = s.data.creators.find((c) => c.userId === s.user.id)
   const initial = existing ?? state?.draft ?? blank(s.user.id, me?.id ?? s.data.creators[0]?.id)
   if (id && !existing) return <p className="page">Recipe not found.</p>
-  return <Editor key={initial.id} initial={initial} isNew={!existing} initialCollections={existing ? s.collectionsOf(existing.id).map((c) => c.id) : state?.collections ?? []} />
+  return (
+    <Editor
+      key={initial.id}
+      initial={initial}
+      isNew={!existing}
+      imported={existing ? undefined : state?.imported}
+      initialCollections={existing ? s.collectionsOf(existing.id).map((c) => c.id) : state?.collections ?? []}
+    />
+  )
 }
 
-function Editor({ initial, isNew, initialCollections }: { initial: Recipe; isNew: boolean; initialCollections: string[] }) {
+interface Imported {
+  how: string
+  warnings: string[]
+}
+
+function Editor({ initial, isNew, initialCollections, imported }: { initial: Recipe; isNew: boolean; initialCollections: string[]; imported?: Imported }) {
   const s = useStore()
   const nav = useNavigate()
   const [r, setR] = useState<Recipe>(initial)
@@ -69,6 +82,8 @@ function Editor({ initial, isNew, initialCollections }: { initial: Recipe; isNew
   const [paste, setPaste] = useState('')
   const [stepsText, setStepsText] = useState(initial.steps.map((x) => x.text).join('\n'))
   const [error, setError] = useState('')
+  /** Keep only the link + our notes for a creator's recipe, not their method. */
+  const [linkOnly, setLinkOnly] = useState(initial.contentMode === 'reference')
   const set = <K extends keyof Recipe>(k: K, v: Recipe[K]) => setR((x) => ({ ...x, [k]: v }))
 
   const external = r.kind === 'creator' || r.kind === 'adapted'
@@ -140,12 +155,13 @@ function Editor({ initial, isNew, initialCollections }: { initial: Recipe; isNew
       .filter((i) => i.name.trim())
       .map((i) => ({ ...i, name: i.name.trim(), ingredientId: matchIngredient(i.name)?.id }))
     const hasContent = ingredients.length > 0 || steps.length > 0
+    const reference = r.kind === 'creator' && (linkOnly || !hasContent)
     const out: Recipe = {
       ...r,
       title: r.title.trim(),
-      steps,
-      ingredients,
-      contentMode: r.kind === 'creator' && !hasContent ? 'reference' : 'full',
+      steps: reference ? [] : steps,
+      ingredients: reference ? [] : ingredients,
+      contentMode: reference ? 'reference' : 'full',
       updatedAt: new Date().toISOString(),
     }
     s.saveRecipe(out, cols)
@@ -169,6 +185,17 @@ function Editor({ initial, isNew, initialCollections }: { initial: Recipe; isNew
         <p className="error" role="alert">
           {error}
         </p>
+      )}
+      {imported && (
+        <div className="review" role="status">
+          <strong>Check before saving</strong>
+          <span>Read from {imported.how}. Look over amounts, units and steps — the reader can misread a number.</span>
+          {imported.warnings.map((w) => (
+            <span key={w} className="review__warn">
+              {w}
+            </span>
+          ))}
+        </div>
       )}
 
       <div className="editor__photo">
@@ -222,6 +249,13 @@ function Editor({ initial, isNew, initialCollections }: { initial: Recipe; isNew
               <span>Original title</span>
               <input value={r.source?.originalTitle ?? ''} onChange={(e) => set('source', { ...r.source!, originalTitle: e.target.value || undefined })} />
             </label>
+            {r.kind === 'creator' && (
+              <label className="switch">
+                <input type="checkbox" checked={linkOnly} onChange={(e) => setLinkOnly(e.target.checked)} />
+                <span className="switch__track" aria-hidden="true" />
+                <span>Keep only the link, our notes and bakes — not their ingredients and method</span>
+              </label>
+            )}
             <label className="field">
               <span>Original author</span>
               <input value={r.source?.originalCreator ?? ''} onChange={(e) => set('source', { ...r.source!, originalCreator: e.target.value || undefined })} placeholder="e.g. Lisa Bass" />
@@ -258,7 +292,7 @@ function Editor({ initial, isNew, initialCollections }: { initial: Recipe; isNew
         <fieldset className="field">
           <legend>Collections</legend>
           <div className="chips chips--wrap">
-            {s.data.collections.map((c) => {
+            {s.collections.map((c) => {
               const on = cols.includes(c.id)
               return (
                 <button type="button" key={c.id} className={`chip chip--soft ${on ? 'is-on' : ''}`} aria-pressed={on} onClick={() => setCols(on ? cols.filter((x) => x !== c.id) : [...cols, c.id])}>

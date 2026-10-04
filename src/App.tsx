@@ -11,6 +11,7 @@ import { CreatorsPage, CreatorPage } from './pages/Creators'
 import { AddPage } from './pages/Add'
 import { EditorPage } from './pages/Editor'
 import { ProfilePage } from './pages/Profile'
+import { CollectionsPage } from './pages/Collections'
 
 /**
  * Hash routing keeps the app hostable on any static host (and inside a
@@ -59,6 +60,7 @@ function Shell() {
           <Route path="/creators" element={<CreatorsPage />} />
           <Route path="/creators/:id" element={<CreatorPage />} />
           <Route path="/me" element={<ProfilePage />} />
+          <Route path="/collections" element={<CollectionsPage />} />
           <Route path="*" element={<HomePage />} />
         </Routes>
       </main>

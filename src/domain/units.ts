@@ -276,3 +276,41 @@ export function convertTempsInText(text: string, system: UnitSystem): string {
     return `${convertTemp(Number(num), unit, to)} °${to} (${num} °${unit})`
   })
 }
+
+// ---------------- choosing between dual measures ----------------
+
+const METRIC_UNITS = new Set<UnitId>(['g', 'kg', 'ml', 'l'])
+// Spoons count as US here: a "3 tsp (9 g)" line shows 9 g in metric, 3 tsp in US.
+const US_UNITS = new Set<UnitId>(['cup', 'oz', 'lb', 'floz', 'tsp', 'tbsp'])
+const fits = (u: UnitId, system: UnitSystem) => (system === 'metric' ? METRIC_UNITS : US_UNITS).has(u)
+
+export interface IngredientDisplay extends DisplayQuantity {
+  /** Small bracketed text: the other published measure, or the recipe's own when converted. */
+  secondary?: string
+}
+
+/**
+ * Picks what to show for one ingredient line:
+ *  1. a stored measure already in the reader's system (exact, never ≈),
+ *  2. otherwise a conversion of the main quantity.
+ * The measure not shown goes in `secondary`, so "250 g (1 cup)" works both ways.
+ */
+export function displayIngredient(
+  q: Quantity,
+  alt: Quantity | undefined,
+  ing: IngredientInfo | undefined,
+  scale: number,
+  system: UnitSystem,
+): IngredientDisplay {
+  if (alt) {
+    const pick = fits(q.unit, system) ? q : fits(alt.unit, system) ? alt : undefined
+    if (pick) {
+      const other = pick === q ? alt : q
+      const d = displayQuantity(pick, undefined, scale, system)
+      const max = other.max != null ? other.max * scale : undefined
+      return { ...d, approx: false, rough: false, secondary: formatIn(other.unit, other.amount * scale, max, false, true) }
+    }
+  }
+  const d = displayQuantity(q, ing, scale, system)
+  return { ...d, secondary: d.converted ? d.original : undefined }
+}

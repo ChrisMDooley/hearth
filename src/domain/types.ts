@@ -94,6 +94,12 @@ export interface RecipeIngredient {
   name: string
   /** Absent for "salt to taste" style lines. */
   quantity?: Quantity
+  /**
+   * The same amount as published in the other system, e.g. Lisa's "1 cup"
+   * next to our 250 g. Shown instead of a computed conversion when it fits the
+   * reader's system, so a dual-measured recipe never needs density guesses.
+   */
+  altQuantity?: Quantity
   /** "softened", "packed", "room temperature" */
   note?: string
   /** Section heading: "Dough", "Filling", "Glaze". */
@@ -151,6 +157,11 @@ export interface Recipe {
 
   /** Photo uploaded as the recipe's main image. Falls back to illustration. */
   heroPhotoId?: ID
+  /**
+   * The creator's own picture, linked (not copied) for imported recipes.
+   * Shown with their credit until the family adds a photo of their own.
+   */
+  sourceImageUrl?: string
   /** Illustration used when there is no photo. */
   art: ArtKind
 
@@ -169,6 +180,9 @@ export type ArtKind =
   | 'crescent'
   | 'braid'
   | 'stick'
+  | 'flat'
+  | 'bar'
+  | 'ring'
 
 export interface Collection {
   id: ID

@@ -20,15 +20,19 @@ src/
     units.ts        conversion, scaling display, temperatures
     parse.ts        ingredient-line parser, timer detection, ids
     search.ts       search ("sourdough under 2 hours")
+    importers.ts    web page (schema.org JSON-LD) and plain-text → draft recipe
     units.test.ts   unit tests
   data/        Persistence boundary.
     repository.ts   Repository interface + IndexedDB and in-memory implementations
     store.tsx       React context: loads data, exposes actions, current user
-    seed.ts         sample library
-  ui/          Reusable components (cards, sheet, timers, icons, illustrations)
+    seed.ts         sample library (+ SEED_VERSION merge for existing devices)
+    sourdoughKitchen.json/.ts  Chris's 22 Sourdough Kitchen recipes
+  ui/          Reusable components (cards, sheet, timers, icons, illustrations, ocr.ts)
   pages/       Screens: Home, Browse, Recipe, CookMode, Creators, Add, Editor, Profile
   styles/      app.css
 docs/          this file, schema.sql, ROADMAP.md
+server/import-proxy/   Cloudflare Worker that fetches recipe pages for link import
+scripts/copy-ocr-assets.mjs  puts the OCR engine + English/German data in public/ocr
 ```
 
 Rule of thumb: `pages/` may use everything; `ui/` uses `domain/` and the store;
@@ -70,7 +74,31 @@ drawn illustration (`ui/RecipeArt.tsx`) rather than a creator's image.
 - In US mode, cups are only used when the fraction is honest (6 tbsp is not "⅓ cup").
 - Unknown ingredients fall back to ml (metric) or oz (US).
 - The original measure can be shown in brackets (profile setting, on by default).
+- A line can carry a second published measure (`altQuantity`), e.g. Lisa's
+  "1 cup" next to our 250 g. The reader's system picks which one is shown, exactly,
+  and the other appears in brackets — no density guess needed.
 - To support a new ingredient, add it to `domain/ingredients.ts`.
+
+## Importing
+
+All routes end in the editor as a draft with a "Check before saving" banner:
+
+| Route | How |
+|---|---|
+| Link | `IMPORT_PROXY` worker fetches the page → `recipeFromHtml` reads schema.org Recipe JSON-LD (title, ingredients, steps incl. sections, times, yield, image, author, site). Without the proxy: paste the page text, link kept for credit. |
+| Photo / screenshot | Tesseract OCR in the browser (English + German, files served from `/ocr/`, cached after first use) → editable text → `recipeFromText`. |
+| Pasted text | `recipeFromText`: uses "Ingredients/Zutaten", "Method/Zubereitung" headings when present, otherwise lines starting with an amount are ingredients; re-joins wrapped lines. |
+| Link only | Bookmark with credit, nothing copied. |
+
+Imported creator recipes keep `source` (site, URL, original title, author) and can be
+switched to "keep only the link" in the editor. A creator's picture is linked via
+`sourceImageUrl` (with a credit), never copied.
+
+## Sample data updates
+
+`SEED_VERSION` in `seed.ts`. When it rises, devices that already have data get the
+new sample records merged in (nothing of theirs is overwritten), built-in collection
+descriptions filled in, and `RETIRED_SEED_IDS` removed if unused.
 
 ## Users (no auth yet)
 
@@ -81,6 +109,6 @@ authentication replaces that one piece.
 ## Limits of v1 (by design)
 
 - Data lives per device/browser. Phones don't share recipes until we add sync.
-- URL import saves a link with attribution; automatic extraction needs a server
-  (browsers can't read other sites directly).
-- Photo/OCR import is not built yet.
+- Link import needs the proxy worker deployed; until then it falls back to pasted text.
+- Photo import is not available in the single-file preview (artifacts can't serve the
+  language data); it works in the real build.

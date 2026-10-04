@@ -5,6 +5,7 @@ import { formatMinutes, totalMinutes, uid } from '../domain/parse'
 import type { BakeEntry, Recipe } from '../domain/types'
 import { formatOven } from '../domain/units'
 import { BakeForm } from '../ui/BakeSheet'
+import { CollectionPicker } from '../ui/CollectionSheet'
 import { Avatar, ConfirmButton, HeartButton, RecipeImage, Segmented, Sheet, Stars, formatDay } from '../ui/components'
 import { Icon } from '../ui/Icon'
 import { IngredientList, StepText, StepTimers, useRecipeView } from '../ui/recipeParts'
@@ -41,6 +42,7 @@ function RecipeView({ r }: { r: Recipe }) {
   const oven = r.oven ? formatOven(r.oven, system) : undefined
   const canEdit = r.createdBy === user.id || r.ownerId === user.id || r.visibility === 'shared'
 
+  const [picking, setPicking] = useState(false)
   useEffect(() => {
     if (location.hash.endsWith('#bakes')) document.getElementById('bakes')?.scrollIntoView()
   }, [])
@@ -49,6 +51,7 @@ function RecipeView({ r }: { r: Recipe }) {
     <article className="recipe">
       <div className="recipe__hero">
         <RecipeImage recipe={r} className="recipe__img" />
+        {!r.heroPhotoId && r.sourceImageUrl && r.source && <span className="recipe__credit">Photo: {r.source.name}</span>}
         <div className="recipe__hero-bar">
           <button className="icon-btn icon-btn--glass" onClick={() => (history.length > 1 ? history.back() : nav('/'))} aria-label="Back">
             <Icon name="back" />
@@ -59,6 +62,9 @@ function RecipeView({ r }: { r: Recipe }) {
                 <Icon name="edit" />
               </Link>
             )}
+            <button className="icon-btn icon-btn--glass" onClick={() => setPicking(true)} aria-label="Save to collection">
+              <Icon name="grid" />
+            </button>
             <HeartButton recipeId={r.id} size="lg" onImage />
           </div>
         </div>
@@ -169,6 +175,9 @@ function RecipeView({ r }: { r: Recipe }) {
         )}
         {r.contentMode === 'reference' && <UserSections r={r} scale={view.scale} creatorName={creator?.name} isExternal={isExternal} />}
       </div>
+      <Sheet open={picking} onClose={() => setPicking(false)} title="Save to collection">
+        <CollectionPicker recipeId={r.id} />
+      </Sheet>
     </article>
   )
 }

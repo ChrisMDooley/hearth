@@ -9,6 +9,7 @@ import type {
   RecipeIngredient,
 } from '../domain/types'
 import type { Snapshot } from './repository'
+import { DISCARD_DESCRIPTION, SOURDOUGH_DESCRIPTION, SOURDOUGH_KITCHEN } from './sourdoughKitchen'
 
 /**
  * Sample library so the interface can be judged with real-looking data.
@@ -41,7 +42,8 @@ export const CREATORS: Creator[] = [
 const C = (id: string, name: string, sort: number): Collection => ({ id, name, ownerId: null, sort })
 export const COLLECTIONS: Collection[] = [
   C('col_bread', 'Bread', 1),
-  C('col_sourdough', 'Sourdough', 2),
+  { ...C('col_sourdough', 'Sourdough', 2), description: SOURDOUGH_DESCRIPTION },
+  { ...C('col_discard', 'Sourdough discard', 2.5), description: DISCARD_DESCRIPTION },
   C('col_cakes', 'Cakes', 3),
   C('col_cookies', 'Cookies', 4),
   C('col_muffins', 'Muffins', 5),
@@ -357,7 +359,6 @@ Bake 30–35 minutes, until deep golden. It should sound hollow underneath.`),
   // ---------- external creators: reference entries (link + our notes) ----------
   ref('r_fob_sandwich', 'Sourdough Sandwich Bread', 'c_fob', 'sourdough', 'loaf', 'https://www.farmhouseonboone.com/?p=35891', 'Lisa Bass', ['sandwich', 'loaf pan'], 3, ['col_bread', 'col_sourdough']),
   ref('r_fob_brioche', 'Sourdough Brioche', 'c_fob', 'sourdough', 'roll', 'https://www.farmhouseonboone.com/?p=35915', 'Lisa Bass', ['enriched', 'butter'], 10, ['col_bread', 'col_sourdough', 'col_breakfast']),
-  ref('r_fob_ww', 'Whole Wheat Sourdough Bread', 'c_fob', 'sourdough', 'loaf', 'https://www.farmhouseonboone.com/?p=35973', 'Lisa Bass', ['whole wheat'], 14, ['col_bread', 'col_sourdough']),
   ref('r_fob_sticks', 'Sourdough Breadsticks', 'c_fob', 'sourdough', 'stick', 'https://www.farmhouseonboone.com/delicious-sourdough-breadsticks', 'Lisa Bass', ['dinner', 'kids'], 22, ['col_sourdough', 'col_kids']),
   ref('r_kab_white', 'Classic White Sandwich Bread', 'c_kab', 'bread', 'loaf', 'https://www.kingarthurbaking.com/recipes/king-arthurs-classic-white-sandwich-bread-recipe', 'King Arthur Baking', ['sandwich', 'yeast'], 7, ['col_bread'], 'King Arthur’s Classic White Sandwich Bread'),
   ref('r_sba_rolls', 'Easy Cinnamon Rolls', 'c_sba', 'pastry', 'roll', 'https://sallysbakingaddiction.com/easy-cinnamon-rolls-from-scratch/', 'Sally McKenney', ['cinnamon', 'weekend'], 24, ['col_breakfast', 'col_desserts', 'col_kids'], 'Easy Cinnamon Rolls (from scratch)'),
@@ -403,6 +404,14 @@ const bakes: BakeEntry[] = [
   { id: 'b6', userId: 'u_chris', recipeId: 'r_muffins', date: '2026-09-24', notes: 'Frozen blueberries straight from the freezer, +2 min.', rating: 4, result: 'good', photoIds: [], createdAt: '2026-09-24T12:00:00Z' },
 ]
 
+/**
+ * Bump when the sample library gains records. Existing devices get the new
+ * records merged in (nothing of theirs is overwritten); see mergeSeed().
+ */
+export const SEED_VERSION = 2
+/** Seed records retired in later versions; removed only if nobody has used them. */
+export const RETIRED_SEED_IDS = ['r_fob_ww']
+
 export function buildSeed(): Snapshot {
   const recipes: Recipe[] = drafts.map(({ added, cols: _c, ...d }) => ({
     contentMode: 'full',
@@ -415,7 +424,11 @@ export function buildSeed(): Snapshot {
     createdAt: day(added),
     updatedAt: day(added),
   }))
-  const recipeCollections = drafts.flatMap((d) => d.cols.map((c) => ({ recipeId: d.id, collectionId: c })))
+  recipes.push(...SOURDOUGH_KITCHEN.map((x) => x.recipe))
+  const recipeCollections = [
+    ...drafts.flatMap((d) => d.cols.map((c) => ({ recipeId: d.id, collectionId: c }))),
+    ...SOURDOUGH_KITCHEN.flatMap((x) => x.cols.map((c) => ({ recipeId: x.recipe.id, collectionId: c }))),
+  ]
   const fav = (userId: string, recipeId: string, k: number) => ({ userId, recipeId, createdAt: day(k) })
   return {
     users: USERS,

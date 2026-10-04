@@ -74,12 +74,30 @@ export function parseIngredientLine(line: string): RecipeIngredient | null {
   }
 
   rest = rest.replace(/^of\s+/i, '')
+
+  // "(1½ cups)", "(9 tbsp — 1 for the pan)", "(1 sachet)": a measure in the
+  // other system becomes altQuantity; anything else is kept as a note.
+  const notes: string[] = []
+  rest = rest.replace(/\s*\(([^)]*)\)/g, (_, inner: string) => {
+    const [first, ...more] = inner.split(/\s+[—–-]\s+/)
+    const alt = out.quantity ? parseIngredientLine(first + ' x') : null
+    if (alt?.quantity && alt.quantity.unit !== 'piece' && alt.quantity.unit !== out.quantity!.unit && alt.name === 'x') {
+      out.altQuantity = alt.quantity
+      if (more.length) notes.push(more.join(' — '))
+    } else {
+      notes.push(inner.trim())
+    }
+    return ''
+  })
+  rest = rest.trim()
+
   const comma = rest.indexOf(',')
   if (comma > 0) {
     out.note = rest.slice(comma + 1).trim()
     rest = rest.slice(0, comma).trim()
   }
   out.name = rest
+  if (notes.length) out.note = [out.note, ...notes].filter(Boolean).join(', ')
   out.ingredientId = matchIngredient(rest)?.id
   return out
 }
@@ -117,6 +135,7 @@ export function findTimers(text: string): StepTimer[] {
 export function formatMinutes(min?: number): string {
   if (!min) return '—'
   if (min < 60) return `${min} min`
+  if (min >= 1440 && min % 1440 === 0) return min === 1440 ? '1 day' : `${min / 1440} days`
   const h = Math.floor(min / 60)
   const m = min % 60
   return m ? `${h} h ${m}` : `${h} h`

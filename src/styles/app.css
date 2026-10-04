@@ -1843,3 +1843,131 @@ textarea {
 .btn--danger-text.is-armed {
   background: color-mix(in srgb, var(--danger) 12%, transparent);
 }
+
+/* ---------- collections & discard jar ---------- */
+.collection-head {
+  margin: -6px 0 12px;
+}
+.collection-head .lede {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+.collection-edit {
+  margin-bottom: 16px;
+}
+.jar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  align-items: center;
+  padding: 12px 14px;
+  margin: 0 0 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.jar label {
+  grid-column: 1 / -1;
+  font-weight: 600;
+  font-size: 15px;
+}
+.jar input {
+  width: 100%;
+  accent-color: var(--accent);
+  min-height: 32px;
+}
+.jar output {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  min-width: 7ch;
+  text-align: right;
+}
+.picker {
+  display: grid;
+  gap: 4px;
+}
+.pick-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.pick-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  font-size: 17px;
+}
+.pick-row input {
+  position: absolute;
+  opacity: 0;
+}
+.pick-row input:checked + .ing__box {
+  background: var(--sage);
+  border-color: var(--sage);
+  color: #fff;
+}
+.pick-row input:focus-visible + .ing__box {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.prose {
+  white-space: pre-line;
+}
+
+/* ---------- import ---------- */
+.review {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  margin-bottom: 16px;
+  border-radius: var(--radius-sm);
+  background: var(--butter);
+  color: #3d2f12;
+  font-size: 15px;
+}
+.review strong {
+  font-size: 16px;
+}
+.review__warn::before {
+  content: '• ';
+}
+.ocr-preview {
+  margin: 14px 0 0;
+  max-height: 260px;
+  width: 100%;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.ocr-progress {
+  display: grid;
+  gap: 6px;
+  margin: 14px 0;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.ocr-progress progress {
+  width: 100%;
+  height: 10px;
+  accent-color: var(--accent);
+}
+.page > .form {
+  margin-top: 16px;
+}
+.recipe__credit {
+  position: absolute;
+  right: 12px;
+  bottom: 40px;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(43, 33, 24, 0.6);
+  color: #fff;
+}
+.btn.is-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}

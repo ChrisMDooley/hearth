@@ -6,10 +6,12 @@ import { useStore } from '../data/store'
 import { Icon } from './Icon'
 import { RecipeArt } from './RecipeArt'
 
+/** Our own photo first, then the creator's linked picture, then an illustration. */
 export function RecipeImage({ recipe, className }: { recipe: Recipe; className?: string }) {
   const { photoUrl } = useStore()
-  const url = photoUrl(recipe.heroPhotoId)
-  if (url) return <img src={url} alt="" className={`${className ?? ''} cover`} />
+  const [broken, setBroken] = useState(false)
+  const url = photoUrl(recipe.heroPhotoId) ?? (broken ? undefined : recipe.sourceImageUrl)
+  if (url) return <img src={url} alt="" className={`${className ?? ''} cover`} onError={() => setBroken(true)} referrerPolicy="no-referrer" />
   return <RecipeArt kind={recipe.art} seed={recipe.id} className={className} />
 }
 

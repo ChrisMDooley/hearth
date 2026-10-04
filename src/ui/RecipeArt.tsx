@@ -138,6 +138,47 @@ function Motif({ kind }: { kind: ArtKind }) {
           ))}
         </g>
       )
+    case 'flat':
+      return (
+        <g>
+          <ellipse cx="200" cy="168" rx="125" ry="52" fill="#E6C08A" />
+          <ellipse cx="200" cy="160" rx="125" ry="52" fill="#F0D3A6" />
+          {[
+            [140, 150, 9],
+            [185, 135, 6],
+            [240, 158, 10],
+            [205, 182, 7],
+            [270, 140, 5],
+            [150, 180, 6],
+          ].map(([x, y, rr], i) => (
+            <ellipse key={i} cx={x} cy={y} rx={rr} ry={rr * 0.6} fill="#9C5B2A" opacity=".55" />
+          ))}
+        </g>
+      )
+    case 'bar':
+      return (
+        <g>
+          {[0, 1, 2].map((i) => (
+            <g key={i} transform={`translate(${95 + i * 72} ${i % 2 ? 120 : 135})`}>
+              <rect width="64" height="64" rx="6" fill={i === 1 ? '#5B3420' : '#C99050'} />
+              <rect width="64" height="14" rx="6" fill={i === 1 ? '#6E4128' : '#D9A766'} />
+              {i !== 1 && <circle cx="22" cy="36" r="5" fill={CHOC} />}
+              {i !== 1 && <circle cx="44" cy="48" r="4" fill={CHOC} />}
+            </g>
+          ))}
+        </g>
+      )
+    case 'ring':
+      return (
+        <g>
+          <circle cx="200" cy="155" r="72" fill={CRUST} />
+          <circle cx="200" cy="155" r="20" fill="#E9CFA8" />
+          <path d="M148 120 Q200 95 252 120" stroke={CRUMB} strokeWidth="8" fill="none" strokeLinecap="round" opacity=".7" />
+          {[[160, 135], [235, 140], [215, 200], [170, 190], [250, 175]].map(([x, y], i) => (
+            <ellipse key={i} cx={x} cy={y} rx="3" ry="1.6" fill="#FFF4E0" transform={`rotate(${i * 50} ${x} ${y})`} />
+          ))}
+        </g>
+      )
     case 'stick':
       return (
         <g>

@@ -2,7 +2,7 @@ import { useCallback, useSyncExternalStore } from 'react'
 import { ingredientById } from '../domain/ingredients'
 import { findTimers } from '../domain/parse'
 import type { Instruction, Recipe, RecipeIngredient, UnitSystem } from '../domain/types'
-import { convertTempsInText, displayQuantity } from '../domain/units'
+import { convertTempsInText, displayIngredient } from '../domain/units'
 import { Icon } from './Icon'
 import { useTimers } from './timers'
 
@@ -70,7 +70,7 @@ export function IngredientRow({
   onToggle(): void
   big?: boolean
 }) {
-  const q = ing.quantity ? displayQuantity(ing.quantity, ingredientById(ing.ingredientId), scale, system) : undefined
+  const q = ing.quantity ? displayIngredient(ing.quantity, ing.altQuantity, ingredientById(ing.ingredientId), scale, system) : undefined
   return (
     <li className={`ing ${checked ? 'is-checked' : ''} ${big ? 'ing--big' : ''}`}>
       <label>
@@ -90,7 +90,7 @@ export function IngredientRow({
           {ing.name}
           {ing.note && <span className="ing__note">, {ing.note}</span>}
           {ing.optional && <span className="ing__opt"> (optional)</span>}
-          {q?.converted && showOriginal && <span className="ing__orig">({q.original})</span>}
+          {q?.secondary && showOriginal && <span className="ing__orig">({q.secondary})</span>}
         </span>
       </label>
     </li>

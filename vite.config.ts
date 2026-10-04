@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
   const singleFile = mode === 'singlefile'
   return {
     base: './',
+    publicDir: singleFile ? false : 'public',
     plugins: [
       react(),
       singleFile
@@ -40,7 +41,16 @@ export default defineConfig(({ mode }) => {
               // App shell + fonts are cached; all recipe data already lives on the
               // device (IndexedDB), so the whole app works offline in v1.
               globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+              // The OCR engine (~15 MB) is fetched the first time someone imports
+              // a photo, then cached — not downloaded on every install.
+              globIgnores: ['ocr/**'],
+              maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
               runtimeCaching: [
+                {
+                  urlPattern: ({ url }) => url.pathname.includes('/ocr/'),
+                  handler: 'CacheFirst',
+                  options: { cacheName: 'ocr', expiration: { maxEntries: 10 } },
+                },
                 {
                   urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
                   handler: 'CacheFirst',

@@ -9,15 +9,20 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "build:preview": "tsc -b && vite build --mode singlefile --outDir dist-preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prebuild": "node scripts/copy-ocr-assets.mjs",
+    "predev": "node scripts/copy-ocr-assets.mjs"
   },
   "dependencies": {
     "idb": "^8.0.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.4"
+    "react-router-dom": "^7.18.4",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
+    "@tesseract.js-data/deu": "^1.0.0",
+    "@tesseract.js-data/eng": "^1.0.0",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",

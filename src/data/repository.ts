@@ -52,7 +52,20 @@ const KEYS: Record<StoreName, string | string[]> = {
   bakes: 'id',
 }
 
-const STORES = Object.keys(KEYS) as StoreName[]
+export const STORES = Object.keys(KEYS) as StoreName[]
+
+/** Stable string key of a record, e.g. "u_chris|r_boule" for a favourite. */
+export function keyOf(store: StoreName, v: object): string {
+  const r = v as Record<string, unknown>
+  return ([] as string[]).concat(KEYS[store]).map((k) => String(r[k])).join('|')
+}
+
+/** The key in the form IndexedDB expects for remove(). */
+export function idbKey(store: StoreName, v: object): IDBValidKey {
+  const r = v as Record<string, IDBValidKey>
+  const k = KEYS[store]
+  return Array.isArray(k) ? k.map((f) => r[f]) : r[k]
+}
 
 export function emptySnapshot(): Snapshot {
   return { users: [], creators: [], recipes: [], collections: [], recipeCollections: [], favorites: [], notes: [], bakes: [] }

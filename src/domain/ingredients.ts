@@ -34,20 +34,24 @@ export const INGREDIENTS: IngredientInfo[] = [
   { id: 'buttermilk', name: 'buttermilk', aliases: ['buttermilk', 'buttermilch'], gramsPerCup: 242, densityConfidence: 'good', liquid: true },
   { id: 'cream', name: 'heavy cream', aliases: ['heavy cream', 'cream', 'whipping cream', 'sahne', 'schlagsahne'], gramsPerCup: 232, densityConfidence: 'good', liquid: true },
   { id: 'sour-cream', name: 'sour cream', aliases: ['sour cream', 'schmand', 'saure sahne'], gramsPerCup: 227, densityConfidence: 'good' },
-  { id: 'yogurt', name: 'plain yogurt', aliases: ['yogurt', 'plain yogurt', 'greek yogurt', 'joghurt'], gramsPerCup: 227, densityConfidence: 'good' },
+  { id: 'yogurt', name: 'plain yogurt', aliases: ['yogurt', 'yoghurt', 'plain yogurt', 'plain yoghurt', 'greek yogurt', 'joghurt'], gramsPerCup: 227, densityConfidence: 'good' },
   { id: 'vanilla', name: 'vanilla extract', aliases: ['vanilla extract', 'vanilla', 'vanilleextrakt'], gramsPerCup: 208, densityConfidence: 'good', liquid: true },
 
   { id: 'egg', name: 'eggs', aliases: ['egg', 'eggs', 'large egg', 'large eggs', 'eier', 'ei'], gramsPerPiece: 50 },
-  { id: 'egg-yolk', name: 'egg yolks', aliases: ['egg yolk', 'egg yolks', 'eigelb'], gramsPerPiece: 18 },
+  { id: 'egg-yolk', name: 'egg yolks', aliases: ['egg yolk', 'egg yolks', 'yolk', 'yolks', 'eigelb'], gramsPerPiece: 18 },
 
   { id: 'salt', name: 'salt', aliases: ['salt', 'fine salt', 'sea salt', 'fine sea salt', 'table salt', 'salz'], gramsPerCup: 288, densityConfidence: 'rough' },
   { id: 'baking-powder', name: 'baking powder', aliases: ['baking powder', 'backpulver'], gramsPerCup: 192, densityConfidence: 'good' },
   { id: 'baking-soda', name: 'baking soda', aliases: ['baking soda', 'bicarbonate of soda', 'natron'], gramsPerCup: 288, densityConfidence: 'good' },
-  { id: 'yeast-instant', name: 'instant yeast', aliases: ['instant yeast', 'dry yeast', 'active dry yeast', 'trockenhefe'], gramsPerCup: 150, densityConfidence: 'good' },
+  { id: 'yeast-instant', name: 'instant yeast', aliases: ['instant yeast', 'dry yeast', 'dried yeast', 'active dry yeast', 'trockenhefe'], gramsPerCup: 150, densityConfidence: 'good' },
   { id: 'cinnamon', name: 'ground cinnamon', aliases: ['cinnamon', 'ground cinnamon', 'zimt'], gramsPerCup: 125, densityConfidence: 'rough' },
   { id: 'cocoa', name: 'cocoa powder', aliases: ['cocoa', 'cocoa powder', 'unsweetened cocoa', 'kakao', 'kakaopulver'], gramsPerCup: 84, densityConfidence: 'rough' },
 
-  { id: 'starter', name: 'sourdough starter', aliases: ['sourdough starter', 'starter', 'active starter', 'levain', 'sauerteig', 'anstellgut'], gramsPerCup: 240, densityConfidence: 'rough' },
+  { id: 'cornmeal', name: 'cornmeal', aliases: ['cornmeal', 'maisgrieß', 'maisgriess', 'polenta'], gramsPerCup: 140, densityConfidence: 'rough' },
+  { id: 'cornstarch', name: 'cornstarch', aliases: ['cornstarch', 'cornflour', 'speisestärke', 'maisstärke'], gramsPerCup: 128, densityConfidence: 'good' },
+  { id: 'molasses', name: 'molasses', aliases: ['molasses', 'zuckerrübensirup'], gramsPerCup: 337, densityConfidence: 'good' },
+  { id: 'parmesan', name: 'grated parmesan', aliases: ['parmesan', 'grated parmesan', 'parmesan cheese'], gramsPerCup: 90, densityConfidence: 'rough' },
+  { id: 'starter', name: 'sourdough starter', aliases: ['sourdough starter', 'starter', 'active starter', 'levain', 'sauerteig', 'anstellgut', 'discard', 'sourdough discard', 'starter discard'], gramsPerCup: 240, densityConfidence: 'rough' },
 
   { id: 'choc-chips', name: 'chocolate chips', aliases: ['chocolate chips', 'chocolate chunks', 'semisweet chocolate chips', 'schokotropfen'], gramsPerCup: 170, densityConfidence: 'good' },
   { id: 'walnuts', name: 'chopped walnuts', aliases: ['walnuts', 'chopped walnuts', 'pecans', 'chopped nuts', 'walnüsse'], gramsPerCup: 113, densityConfidence: 'rough' },

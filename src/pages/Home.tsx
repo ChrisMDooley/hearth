@@ -36,7 +36,7 @@ export function HomePage() {
   const counts = externals.map((c) => ({ c, n: recipes.filter((r) => r.creatorId === c.id).length })).sort((a, b) => b.n - a.n)
   const featured = counts[0]?.n ? counts[0].c : undefined
 
-  const shelves = data.collections.filter((c) => ['col_bread', 'col_sourdough', 'col_cakes', 'col_cookies', 'col_muffins', 'col_christmas', 'col_quick', 'col_kids'].includes(c.id))
+  const shelves = s.collections.filter((c) => c.ownerId === user.id || ['col_bread', 'col_sourdough', 'col_discard', 'col_cakes', 'col_cookies', 'col_muffins', 'col_christmas', 'col_quick', 'col_kids'].includes(c.id))
 
   return (
     <div className="page home">
@@ -70,6 +70,9 @@ export function HomePage() {
             {c.name}
           </Link>
         ))}
+        <Link role="listitem" to="/collections" className="chip chip--soft">
+          <Icon name="grid" size={15} /> All collections
+        </Link>
       </div>
 
       <Rail title="Favourites" to="/browse?fav=1" empty={<p className="empty-line">Tap the ♥ on any recipe to keep it here.</p>}>

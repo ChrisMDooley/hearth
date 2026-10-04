@@ -1,8 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { uid } from '../domain/parse'
 import type { BakeEntry, Collection, Creator, Photo, Recipe, User } from '../domain/types'
-import { emptySnapshot, openRepository, type Repository, type Snapshot } from './repository'
-import { buildSeed } from './seed'
+import { STORES, emptySnapshot, idbKey, keyOf, openRepository, type Repository, type Snapshot } from './repository'
+import { RETIRED_SEED_IDS, SEED_VERSION, buildSeed } from './seed'
 
 /**
  * App-wide state. Loads everything once (a family library is small), keeps it
@@ -14,6 +14,45 @@ import { buildSeed } from './seed'
  */
 
 const USER_KEY = 'hearth.currentUser'
+const SEED_KEY = 'hearth.seedVersion'
+
+/**
+ * Brings an existing library up to the current sample data without touching
+ * anything the family changed: adds missing records, fills in built-in
+ * collection descriptions, and drops retired sample recipes nobody used.
+ */
+async function mergeSeed(r: Repository, snap: Snapshot): Promise<Snapshot> {
+  const seed = buildSeed()
+  const out = { ...snap }
+  for (const store of STORES) {
+    const have = new Set((snap[store] as object[]).map((v) => keyOf(store, v)))
+    const add = (seed[store] as object[]).filter((v) => !have.has(keyOf(store, v)))
+    for (const v of add) await r.put(store, v as never)
+    ;(out[store] as object[]) = [...(snap[store] as object[]), ...add]
+  }
+  out.collections = await Promise.all(
+    out.collections.map(async (c) => {
+      const s = seed.collections.find((x) => x.id === c.id)
+      if (s?.description && !c.description) {
+        const next = { ...c, description: s.description }
+        await r.put('collections', next)
+        return next
+      }
+      return c
+    }),
+  )
+  for (const id of RETIRED_SEED_IDS) {
+    const used = out.bakes.some((b) => b.recipeId === id) || out.notes.some((n) => n.recipeId === id)
+    if (used || !out.recipes.some((x) => x.id === id)) continue
+    await r.remove('recipes', id)
+    for (const rc of out.recipeCollections.filter((x) => x.recipeId === id)) await r.remove('recipeCollections', idbKey('recipeCollections', rc))
+    for (const f of out.favorites.filter((x) => x.recipeId === id)) await r.remove('favorites', idbKey('favorites', f))
+    out.recipes = out.recipes.filter((x) => x.id !== id)
+    out.recipeCollections = out.recipeCollections.filter((x) => x.recipeId !== id)
+    out.favorites = out.favorites.filter((x) => x.recipeId !== id)
+  }
+  return out
+}
 
 function readLocal(key: string) {
   try {
@@ -43,8 +82,14 @@ interface Store {
   recipes: Recipe[]
   recipe(id: string): Recipe | undefined
   creator(id: string): Creator | undefined
+  /** Built-in collections plus the current user's own. */
+  collections: Collection[]
   collectionsOf(recipeId: string): Collection[]
   recipesIn(collectionId: string): Recipe[]
+  addCollection(name: string): Collection
+  renameCollection(id: string, name: string, description?: string): void
+  deleteCollection(id: string): void
+  toggleInCollection(recipeId: string, collectionId: string): void
 
   isFavorite(recipeId: string): boolean
   toggleFavorite(recipeId: string): void
@@ -93,6 +138,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (snap.recipes.length === 0 && snap.users.length === 0) {
         snap = buildSeed()
         await r.replaceAll(snap)
+        writeLocal(SEED_KEY, String(SEED_VERSION))
+      } else if (Number(readLocal(SEED_KEY) ?? 1) < SEED_VERSION) {
+        snap = await mergeSeed(r, snap)
+        writeLocal(SEED_KEY, String(SEED_VERSION))
       }
       if (cancelled) return
       setPersistent(r.persistent)
@@ -115,6 +164,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const store = useMemo<Store>(() => {
     const visible = data.recipes.filter((r) => r.visibility === 'shared' || r.ownerId === user.id)
+    const myCollections = data.collections.filter((c) => c.ownerId === null || c.ownerId === user.id).sort((a, b) => a.sort - b.sort)
     const now = () => new Date().toISOString()
 
     return {
@@ -147,9 +197,39 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       recipes: visible,
       recipe: (id) => visible.find((r) => r.id === id),
       creator: (id) => data.creators.find((c) => c.id === id),
+      collections: myCollections,
       collectionsOf(recipeId) {
         const ids = new Set(data.recipeCollections.filter((rc) => rc.recipeId === recipeId).map((rc) => rc.collectionId))
-        return data.collections.filter((c) => ids.has(c.id)).sort((a, b) => a.sort - b.sort)
+        return myCollections.filter((c) => ids.has(c.id))
+      },
+      addCollection(name) {
+        const c: Collection = { id: uid('col_'), name: name.trim(), ownerId: user.id, sort: 100 + data.collections.length }
+        mutate((s) => ({ ...s, collections: [...s.collections, c] }), (r) => r.put('collections', c))
+        return c
+      },
+      renameCollection(id, name, description) {
+        const c = data.collections.find((x) => x.id === id)
+        if (!c || c.ownerId !== user.id) return
+        const next = { ...c, name: name.trim() || c.name, description: description?.trim() || undefined }
+        mutate((s) => ({ ...s, collections: s.collections.map((x) => (x.id === id ? next : x)) }), (r) => r.put('collections', next))
+      },
+      deleteCollection(id) {
+        const c = data.collections.find((x) => x.id === id)
+        if (!c || c.ownerId !== user.id) return
+        const links = data.recipeCollections.filter((x) => x.collectionId === id)
+        mutate(
+          (s) => ({ ...s, collections: s.collections.filter((x) => x.id !== id), recipeCollections: s.recipeCollections.filter((x) => x.collectionId !== id) }),
+          async (r) => {
+            await r.remove('collections', id)
+            for (const l of links) await r.remove('recipeCollections', [l.recipeId, l.collectionId])
+          },
+        )
+      },
+      toggleInCollection(recipeId, collectionId) {
+        const has = data.recipeCollections.some((x) => x.recipeId === recipeId && x.collectionId === collectionId)
+        const rc = { recipeId, collectionId }
+        if (has) mutate((s) => ({ ...s, recipeCollections: s.recipeCollections.filter((x) => !(x.recipeId === recipeId && x.collectionId === collectionId)) }), (r) => r.remove('recipeCollections', [recipeId, collectionId]))
+        else mutate((s) => ({ ...s, recipeCollections: [...s.recipeCollections, rc] }), (r) => r.put('recipeCollections', rc))
       },
       recipesIn(collectionId) {
         const ids = new Set(data.recipeCollections.filter((rc) => rc.collectionId === collectionId).map((rc) => rc.recipeId))
@@ -255,6 +335,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       async resetSampleData() {
         const snap = buildSeed()
         await repo.current?.replaceAll(snap)
+        writeLocal(SEED_KEY, String(SEED_VERSION))
         setData(snap)
       },
     }
