@@ -11,7 +11,7 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "hearth"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "ef581356-55a7-4ebe-ab54-82157821a18a"
 
 [[r2_buckets]]
 binding = "PHOTOS"
