@@ -1,7 +1,12 @@
-# Cloudflare Pages project. The Git-connected build reads this file for bindings.
+# Cloudflare Worker: serves the app from dist/ and the family API under /api.
+# Cloudflare's Git build runs `npm run build`, then `npx wrangler deploy` with this file.
 name = "hearth"
-pages_build_output_dir = "dist"
+main = "worker/index.ts"
 compatibility_date = "2026-10-01"
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
 
 [[d1_databases]]
 binding = "DB"
@@ -13,7 +18,6 @@ binding = "PHOTOS"
 bucket_name = "hearth-photos"
 
 # Optional, recommended once Access is on: verify the signed login token too.
-# Zero Trust → Access → Applications → (this app) → "Application Audience (AUD) Tag".
 # [vars]
 # ACCESS_TEAM_DOMAIN = "yourteam.cloudflareaccess.com"
 # ACCESS_AUD = "…"

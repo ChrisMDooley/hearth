@@ -31,8 +31,8 @@ src/
   pages/       Screens: Home, Browse, Recipe, CookMode, Creators, Add, Editor, Profile
   styles/      app.css
 docs/          this file, schema.sql, ROADMAP.md
-functions/api/[[path]].ts  the family server API (Cloudflare Pages Functions: D1 + R2)
-wrangler.toml              Cloudflare bindings (DB, PHOTOS)
+worker/index.ts, api.ts    Cloudflare Worker: serves dist/ and the /api (D1 + R2)
+wrangler.toml              Cloudflare config and bindings (ASSETS, DB, PHOTOS)
 scripts/copy-ocr-assets.mjs  puts the OCR engine + English/German data in public/ocr
 ```
 
@@ -103,7 +103,7 @@ descriptions filled in, and `RETIRED_SEED_IDS` removed if unused.
 
 ## Hosting, login and sync (Cloudflare)
 
-- **App:** Cloudflare Pages, built from GitHub on every push.
+- **App:** one Cloudflare Worker with static assets, built from GitHub on every push.
 - **Login:** Cloudflare Access in front of the whole site (email one-time code).
   The API reads the signed-in email; with `ACCESS_TEAM_DOMAIN` + `ACCESS_AUD` set it
   also verifies Access's signed token.

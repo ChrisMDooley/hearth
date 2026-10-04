@@ -1,5 +1,5 @@
 /**
- * Hearth API — Cloudflare Pages Functions. Everything under /api/*.
+ * Hearth API — runs in the Cloudflare Worker (worker/index.ts). Everything under /api/*.
  *
  * Who is calling: the whole site sits behind Cloudflare Access, which logs
  * people in by email and passes the address on. If ACCESS_TEAM_DOMAIN and
@@ -18,7 +18,8 @@
  * ask "what changed since #n". Deletions are kept as tombstones.
  */
 
-interface Env {
+export interface Env {
+  ASSETS: Fetcher
   DB: D1Database
   PHOTOS: R2Bucket
   ACCESS_TEAM_DOMAIN?: string
@@ -27,7 +28,10 @@ interface Env {
   DEV_EMAIL?: string
 }
 
-type Ctx = EventContext<Env, string, Record<string, unknown>>
+interface Ctx {
+  request: Request
+  env: Env
+}
 
 const STORES = new Set(['users', 'creators', 'recipes', 'collections', 'recipeCollections', 'favorites', 'notes', 'bakes'])
 /** Records only their owner may write and only their owner receives. */
@@ -35,7 +39,7 @@ const PRIVATE = new Set(['notes', 'favorites'])
 /** Records only their owner may write, but the family sees. */
 const OWNED = new Set(['bakes'])
 
-export const onRequest = async (ctx: Ctx): Promise<Response> => {
+export async function handleApi(ctx: Ctx): Promise<Response> {
   try {
     const url = new URL(ctx.request.url)
     const path = url.pathname.replace(/^\/api\/?/, '')
