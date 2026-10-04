@@ -21,6 +21,7 @@
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261004.1",
     "@tesseract.js-data/deu": "^1.0.0",
     "@tesseract.js-data/eng": "^1.0.0",
     "@types/node": "^24.13.3",
@@ -32,6 +33,7 @@
     "vite": "^8.3.0",
     "vite-plugin-pwa": "^2.0.0",
     "vite-plugin-singlefile": "^2.3.3",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.3",
+    "wrangler": "^4.147.0"
   }
 }

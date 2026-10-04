@@ -19,3 +19,5 @@ Start here:
 - `docs/ROADMAP.md` — what's done, what's next, open decisions
 
 Working name "Hearth" — change it in `index.html`, `vite.config.ts` (manifest) and `.brand` in `App.tsx`.
+
+Going live: `docs/DEPLOY.md`.

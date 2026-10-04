@@ -131,19 +131,22 @@ function Back({ onBack }: { onBack(): void }) {
 
 function UrlImport({ onBack }: { onBack(): void }) {
   const toDraft = useDraftFromImport()
+  const s = useStore()
+  // On the family server the import runs there; otherwise an optional proxy.
+  const endpoint = s.sync ? 'api/import' : IMPORT_PROXY
   const [url, setUrl] = useState('')
   const [busy, setBusy] = useState(false)
   const [problem, setProblem] = useState('')
   const [text, setText] = useState('')
-  const needsText = !IMPORT_PROXY || !!problem
+  const needsText = !endpoint || !!problem
 
   async function go() {
     setProblem('')
-    if (!IMPORT_PROXY) return
+    if (!endpoint) return
     setBusy(true)
     try {
-      const res = await fetch(`${IMPORT_PROXY}?url=${encodeURIComponent(url.trim())}`)
-      if (!res.ok) throw new Error(await res.text())
+      const res = await fetch(`${endpoint}?url=${encodeURIComponent(url.trim())}`)
+      if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error ?? 'The page could not be loaded.')
       const html = await res.text()
       const d = recipeFromHtml(html, res.headers.get('X-Final-Url') || url.trim())
       if (!d) throw new Error('That page has no recipe data we can read.')
@@ -175,9 +178,9 @@ function UrlImport({ onBack }: { onBack(): void }) {
           <input id="import-url" type="url" inputMode="url" required value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.farmhouseonboone.com/…" />
         </label>
         {problem && <p className="error" role="alert">{problem}</p>}
-        {!IMPORT_PROXY && (
+        {!endpoint && (
           <p className="fineprint">
-            Reading pages directly needs the small import service (see the roadmap). Until it’s switched on: open the recipe, copy the ingredients and method, and paste them here.
+            Reading pages directly works in the family app on Cloudflare. In this preview: open the recipe, copy the ingredients and method, and paste them here.
           </p>
         )}
         {needsText && (

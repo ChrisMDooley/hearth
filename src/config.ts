@@ -1,6 +1,6 @@
 /** Build-time settings. Set in a .env file or on the build command. */
 
-/** Address of the import proxy worker (server/import-proxy). Empty = link import uses paste fallback. */
+/** Optional import proxy outside Cloudflare. On the family server, /api/import is used instead. */
 export const IMPORT_PROXY: string = import.meta.env.VITE_IMPORT_PROXY ?? ''
 
 /**

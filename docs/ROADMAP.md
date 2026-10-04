@@ -1,5 +1,13 @@
 # Roadmap
 
+## v0.3 — built, waiting for the Cloudflare account (4 Oct 2026)
+
+- Family server on Cloudflare: login by email (Access), shared library, sync between
+  phones that keeps working offline, photos in R2, link import on the server.
+- "Who's this?" on first login; sync status on the profile.
+- Tested with two simulated phones: shared bakes and photos, private notes stay
+  private, deletions stick, new recipes appear on the other phone.
+
 ## v0.2 — done (4 Oct 2026)
 
 - **Sourdough Kitchen** (22 recipes adapted from Lisa Bass / Farmhouse on Boone) in the
@@ -18,7 +26,7 @@ creators, editor, profiles, notes, bake journal, on-device storage.
 
 ## Next
 
-1. **Hosting + sync** (decision pending — see below), then deploy the import proxy.
+1. **Go live on Cloudflare** — see `docs/DEPLOY.md`.
 2. **Recipe-level photo from import:** option to keep the scanned card as Oma's original.
 3. **Starter tracker:** feed times and a "ready around…" estimate for the loaves.
 4. **Bring! hand-off** (instead of our own shopping list). Bring imports recipes from
@@ -26,7 +34,7 @@ creators, editor, profiles, notes, bake journal, on-device storage.
    Plan: a public, read-only share page per recipe with that markup and a
    "Send to Bring!" button using Bring's recipe widget. Needs hosting first.
 
-## Hosting options (free)
+## Hosting options considered (chose Cloudflare)
 
 | | Cost | Good | Watch out |
 |---|---|---|---|

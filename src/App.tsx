@@ -12,6 +12,7 @@ import { AddPage } from './pages/Add'
 import { EditorPage } from './pages/Editor'
 import { ProfilePage } from './pages/Profile'
 import { CollectionsPage } from './pages/Collections'
+import { ClaimProfile } from './pages/ClaimProfile'
 
 /**
  * Hash routing keeps the app hostable on any static host (and inside a
@@ -30,7 +31,7 @@ export default function App() {
 }
 
 function Shell() {
-  const { ready, persistent } = useStore()
+  const { ready, persistent, sync } = useStore()
   const loc = useLocation()
   const cooking = loc.pathname.endsWith('/cook')
   useEffect(() => {
@@ -44,6 +45,7 @@ function Shell() {
       </div>
     )
   }
+  if (sync?.needsProfile) return <ClaimProfile />
   return (
     <div className={`shell ${cooking ? 'shell--cooking' : ''}`}>
       {!cooking && <NavBar />}

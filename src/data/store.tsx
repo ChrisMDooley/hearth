@@ -3,14 +3,17 @@ import { uid } from '../domain/parse'
 import type { BakeEntry, Collection, Creator, Photo, Recipe, User } from '../domain/types'
 import { STORES, emptySnapshot, idbKey, keyOf, openRepository, type Repository, type Snapshot } from './repository'
 import { RETIRED_SEED_IDS, SEED_VERSION, buildSeed } from './seed'
+import { SyncEngine, SyncedRepository, claimProfile, detectServer, type Me, type SyncStatus } from './sync'
 
 /**
  * App-wide state. Loads everything once (a family library is small), keeps it
  * in memory, and writes each change through the Repository.
  *
- * "Current user" is a simple profile switch for v1 — no passwords. When real
- * auth arrives, `currentUserId` comes from the session instead of
- * localStorage; nothing else in the UI needs to change.
+ * Two modes, chosen at start-up:
+ *  - On the family server (Cloudflare, behind Access login): the signed-in
+ *    email decides the profile, and changes sync between devices (sync.ts).
+ *  - Anywhere else (preview, local dev): everything stays on this device and
+ *    "Who's baking?" is a simple profile switch.
  */
 
 const USER_KEY = 'hearth.currentUser'
@@ -105,6 +108,20 @@ interface Store {
   deleteRecipe(id: string): void
   addCreator(c: Omit<Creator, 'id'>): Creator
 
+  /** Present when running on the family server. */
+  sync?: {
+    email: string
+    status: SyncStatus
+    lastSynced?: Date
+    pending: number
+    /** Profiles already linked to someone's email. */
+    claimed: string[]
+    /** This email isn't linked to a profile yet. */
+    needsProfile: boolean
+    claim(userId: string): Promise<string | null>
+    syncNow(): void
+  }
+
   addPhoto(file: File, kind: Photo['kind']): Promise<string>
   photoUrl(id?: string): string | undefined
   resetSampleData(): Promise<void>
@@ -129,22 +146,69 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({})
   const loadingPhotos = useRef(new Set<string>())
 
+  const engine = useRef<SyncEngine | null>(null)
+  const [me, setMe] = useState<Me | null>(null)
+  const [syncTick, setSyncTick] = useState(0)
+
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const r = await openRepository()
-      repo.current = r
-      let snap = await r.loadAll()
-      if (snap.recipes.length === 0 && snap.users.length === 0) {
-        snap = buildSeed()
-        await r.replaceAll(snap)
+      const local = await openRepository()
+      const server = local.persistent ? await detectServer() : null
+      let snap = await local.loadAll()
+      const localEmpty = snap.recipes.length === 0 && snap.users.length === 0
+
+      if (server) {
+        const e = new SyncEngine(local)
+        await e.load()
+        const synced = new SyncedRepository(local, e)
+        repo.current = synced
+        engine.current = e
+        if (server.empty) {
+          // First device on a fresh server: this device's library becomes the family's.
+          if (localEmpty) {
+            snap = buildSeed()
+            await local.replaceAll(snap)
+          } else if (Number(readLocal(SEED_KEY) ?? 1) < SEED_VERSION) {
+            snap = await mergeSeed(local, snap)
+          }
+          e.queueAllAsSeed(snap)
+          e.setSeedVersion(SEED_VERSION)
+        } else if (!e.hasCursor) {
+          // New device: offer what's here (never overwriting), then fetch the family library.
+          if (!localEmpty) e.queueAllAsSeed(snap)
+          await e.run()
+          snap = await local.loadAll()
+        }
+        if (!server.empty && server.seedVersion < SEED_VERSION) {
+          synced.seeding = true
+          snap = await mergeSeed(synced, snap)
+          synced.seeding = false
+          e.setSeedVersion(SEED_VERSION)
+        }
         writeLocal(SEED_KEY, String(SEED_VERSION))
-      } else if (Number(readLocal(SEED_KEY) ?? 1) < SEED_VERSION) {
-        snap = await mergeSeed(r, snap)
-        writeLocal(SEED_KEY, String(SEED_VERSION))
+        e.onRemote = async () => {
+          const next = await local.loadAll()
+          if (!cancelled) setData(next)
+        }
+        e.subscribe(() => setSyncTick((x) => x + 1))
+        e.start()
+        e.schedule(100)
+        if (server.userId) setUserId(server.userId)
+        setMe(server)
+      } else {
+        repo.current = local
+        if (localEmpty) {
+          snap = buildSeed()
+          await local.replaceAll(snap)
+          writeLocal(SEED_KEY, String(SEED_VERSION))
+        } else if (Number(readLocal(SEED_KEY) ?? 1) < SEED_VERSION) {
+          snap = await mergeSeed(local, snap)
+          writeLocal(SEED_KEY, String(SEED_VERSION))
+        }
       }
       if (cancelled) return
-      setPersistent(r.persistent)
+      setPersistent(local.persistent)
       setData(snap)
       setReady(true)
     })()
@@ -173,9 +237,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       data,
       user,
       setUser(id) {
+        if (me) return // on the server, the login decides who you are
         setUserId(id)
         writeLocal(USER_KEY, id)
       },
+      sync: me
+        ? {
+            email: me.email,
+            status: engine.current?.status ?? 'syncing',
+            lastSynced: engine.current?.lastSynced,
+            pending: engine.current?.pending ?? 0,
+            claimed: me.claimed,
+            needsProfile: !me.userId,
+            async claim(id) {
+              const err = await claimProfile(id)
+              if (!err) {
+                setMe({ ...me, userId: id, claimed: [...me.claimed, id] })
+                setUserId(id)
+              }
+              return err
+            },
+            syncNow: () => void engine.current?.run(),
+          }
+        : undefined,
       updateUser(patch) {
         const u = { ...user, ...patch }
         mutate((s) => ({ ...s, users: s.users.map((x) => (x.id === u.id ? u : x)) }), (r) => r.put('users', u))
@@ -327,7 +411,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (!loadingPhotos.current.has(id) && repo.current) {
           loadingPhotos.current.add(id)
           repo.current.getPhoto(id).then((p) => {
-            if (p) setPhotoUrls((m) => ({ ...m, [id]: URL.createObjectURL(p.blob) }))
+            // Not on this phone yet? Load it from the family server.
+            const url = p ? URL.createObjectURL(p.blob) : me ? `api/photos/${id}` : undefined
+            if (url) setPhotoUrls((m) => ({ ...m, [id]: url }))
           })
         }
         return undefined
@@ -339,7 +425,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setData(snap)
       },
     }
-  }, [data, ready, persistent, user, mutate, photoUrls])
+  }, [data, ready, persistent, user, mutate, photoUrls, me, syncTick])
 
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>
 }

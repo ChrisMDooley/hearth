@@ -1971,3 +1971,38 @@ textarea {
   opacity: 0.45;
   pointer-events: none;
 }
+
+/* ---------- sync & first login ---------- */
+.sync-state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.sync-state .link-btn {
+  margin-left: auto;
+}
+.sync-state__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--sage);
+  flex: none;
+}
+.sync-state--syncing .sync-state__dot {
+  background: var(--butter);
+}
+.sync-state--offline .sync-state__dot,
+.sync-state--error .sync-state__dot {
+  background: var(--danger);
+}
+.claim {
+  max-width: 560px;
+  padding-top: 48px;
+  display: grid;
+  gap: 8px;
+}

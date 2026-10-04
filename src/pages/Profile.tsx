@@ -24,6 +24,19 @@ export function ProfilePage() {
         </div>
       </header>
 
+      {s.sync ? (
+        <section className="block">
+          <h2>Family sync</h2>
+          <p className="muted small">Signed in as {s.sync.email}</p>
+          <div className={`sync-state sync-state--${s.sync.status}`} role="status">
+            <span className="sync-state__dot" aria-hidden="true" />
+            <span>{syncText(s.sync.status, s.sync.lastSynced, s.sync.pending)}</span>
+            <button className="link-btn" onClick={s.sync.syncNow}>
+              Sync now
+            </button>
+          </div>
+        </section>
+      ) : (
       <section className="block">
         <h2>Who’s baking?</h2>
         <p className="muted small">No passwords yet — just pick your name on this device.</p>
@@ -51,6 +64,7 @@ export function ProfilePage() {
           </button>
         </form>
       </section>
+      )}
 
       <section className="block">
         <h2>Measurements</h2>
@@ -74,22 +88,33 @@ export function ProfilePage() {
       <section className="block">
         <h2>Your data</h2>
         <p className="muted small">
-          {s.persistent
-            ? 'Everything is saved on this device. Sharing between phones comes with the sync step (see the roadmap).'
-            : 'This browser isn’t saving data right now — try opening the app outside private browsing.'}
+          {s.sync
+            ? 'Everything is kept on this phone and shared with the family. Recipes you have opened work without signal.'
+            : s.persistent
+              ? 'Everything is saved on this device only.'
+              : 'This browser isn’t saving data right now — try opening the app outside private browsing.'}
         </p>
         <div className="row-gap wrap">
           <Link to="/browse?fav=1" className="btn btn--ghost">
             <Icon name="heart" /> My favourites
           </Link>
-          <ConfirmButton
+          {!s.sync && <ConfirmButton
             className="btn btn--danger-text"
             label="Reset sample data"
             confirmLabel="Tap again — removes your own recipes and photos"
             onConfirm={() => void s.resetSampleData()}
-          />
+          />}
         </div>
       </section>
     </div>
   )
+}
+
+function syncText(status: string, last: Date | undefined, pending: number) {
+  if (status === 'syncing') return 'Syncing…'
+  if (status === 'offline') return pending ? `Offline — ${pending} change${pending > 1 ? 's' : ''} waiting` : 'Offline — will sync when you’re back online'
+  if (status === 'error') return 'Couldn’t reach the family server — retrying'
+  if (!last) return 'Up to date'
+  const min = Math.round((Date.now() - last.getTime()) / 60000)
+  return min < 1 ? 'Up to date' : `Up to date · ${min} min ago`
 }

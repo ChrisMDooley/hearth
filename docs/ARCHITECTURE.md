@@ -31,7 +31,8 @@ src/
   pages/       Screens: Home, Browse, Recipe, CookMode, Creators, Add, Editor, Profile
   styles/      app.css
 docs/          this file, schema.sql, ROADMAP.md
-server/import-proxy/   Cloudflare Worker that fetches recipe pages for link import
+functions/api/[[path]].ts  the family server API (Cloudflare Pages Functions: D1 + R2)
+wrangler.toml              Cloudflare bindings (DB, PHOTOS)
 scripts/copy-ocr-assets.mjs  puts the OCR engine + English/German data in public/ocr
 ```
 
@@ -85,7 +86,7 @@ All routes end in the editor as a draft with a "Check before saving" banner:
 
 | Route | How |
 |---|---|
-| Link | `IMPORT_PROXY` worker fetches the page → `recipeFromHtml` reads schema.org Recipe JSON-LD (title, ingredients, steps incl. sections, times, yield, image, author, site). Without the proxy: paste the page text, link kept for credit. |
+| Link | `/api/import` (or `VITE_IMPORT_PROXY` elsewhere) fetches the page → `recipeFromHtml` reads schema.org Recipe JSON-LD (title, ingredients, steps incl. sections, times, yield, image, author, site). Without the proxy: paste the page text, link kept for credit. |
 | Photo / screenshot | Tesseract OCR in the browser (English + German, files served from `/ocr/`, cached after first use) → editable text → `recipeFromText`. |
 | Pasted text | `recipeFromText`: uses "Ingredients/Zutaten", "Method/Zubereitung" headings when present, otherwise lines starting with an amount are ingredients; re-joins wrapped lines. |
 | Link only | Bookmark with credit, nothing copied. |
@@ -100,15 +101,37 @@ switched to "keep only the link" in the editor. A creator's picture is linked vi
 new sample records merged in (nothing of theirs is overwritten), built-in collection
 descriptions filled in, and `RETIRED_SEED_IDS` removed if unused.
 
-## Users (no auth yet)
+## Hosting, login and sync (Cloudflare)
 
-"Who's baking?" on the profile screen sets the current user on this device.
-`store.tsx` is the only place that decides the current user, so real
-authentication replaces that one piece.
+- **App:** Cloudflare Pages, built from GitHub on every push.
+- **Login:** Cloudflare Access in front of the whole site (email one-time code).
+  The API reads the signed-in email; with `ACCESS_TEAM_DOMAIN` + `ACCESS_AUD` set it
+  also verifies Access's signed token.
+- **Profiles:** first visit with a new email shows "Who's this?" and links the email
+  to a profile (`members` table). After that the login decides who you are.
+- **Data:** D1 table `records(store, key, data, owner, seq, deleted)` holds the same
+  documents the phone keeps. Each write gets the next `seq`; a device asks for
+  "everything after my seq". Deletions are tombstones. The normalised
+  `docs/schema.sql` remains the reference if we ever need SQL reporting.
+- **Privacy on the server:** notes and favourites are only sent to their owner;
+  private recipes and personal collections only to their owner; you can only write
+  your own notes, favourites and bakes.
+- **Photos:** R2 bucket, `PUT/GET /api/photos/:id`; phones keep their own copy and
+  fetch others' on demand.
+- **Offline-first (`src/data/sync.ts`):** the phone's IndexedDB stays the source the
+  UI reads. Writes go to an outbox and are sent shortly after; pulls happen on start,
+  on focus/online and every minute. A record with an unsent local change is never
+  overwritten by the server (last write wins otherwise).
+- **Sample data on the server:** sent as insert-if-absent, so samples the family
+  deleted stay deleted. The server stores the sample-data version.
+- Without the server (preview, `npm run dev`) the app runs device-only as before.
+
+## Users without the server
+
+"Who's baking?" on the profile screen switches profiles on this device.
 
 ## Limits of v1 (by design)
 
-- Data lives per device/browser. Phones don't share recipes until we add sync.
-- Link import needs the proxy worker deployed; until then it falls back to pasted text.
+- In the preview, data lives in that browser only and link import falls back to pasted text.
 - Photo import is not available in the single-file preview (artifacts can't serve the
   language data); it works in the real build.

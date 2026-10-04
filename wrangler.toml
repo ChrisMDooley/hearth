@@ -1,0 +1,19 @@
+# Cloudflare Pages project. The Git-connected build reads this file for bindings.
+name = "hearth"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-10-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "hearth"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[[r2_buckets]]
+binding = "PHOTOS"
+bucket_name = "hearth-photos"
+
+# Optional, recommended once Access is on: verify the signed login token too.
+# Zero Trust → Access → Applications → (this app) → "Application Audience (AUD) Tag".
+# [vars]
+# ACCESS_TEAM_DOMAIN = "yourteam.cloudflareaccess.com"
+# ACCESS_AUD = "…"

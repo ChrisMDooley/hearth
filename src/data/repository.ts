@@ -39,6 +39,9 @@ export interface Repository {
   putPhoto(p: Photo): Promise<void>
   getPhoto(id: string): Promise<Photo | undefined>
   removePhoto(id: string): Promise<void>
+  /** Small device-only settings (sync cursor, outbox). Never synced. */
+  getMeta<T>(k: string): Promise<T | undefined>
+  setMeta(k: string, v: unknown): Promise<void>
 }
 
 const KEYS: Record<StoreName, string | string[]> = {
@@ -58,6 +61,11 @@ export const STORES = Object.keys(KEYS) as StoreName[]
 export function keyOf(store: StoreName, v: object): string {
   const r = v as Record<string, unknown>
   return ([] as string[]).concat(KEYS[store]).map((k) => String(r[k])).join('|')
+}
+
+/** Inverse of keyOf: the key in the form IndexedDB expects. */
+export function keyFromString(store: StoreName, key: string): IDBValidKey {
+  return Array.isArray(KEYS[store]) ? key.split('|') : key
 }
 
 /** The key in the form IndexedDB expects for remove(). */
@@ -114,6 +122,14 @@ class IndexedDbRepository implements Repository {
   async removePhoto(id: string) {
     await this.db.delete('photos', id)
   }
+
+  async getMeta<T>(k: string) {
+    return ((await this.db.get('meta', k)) as { k: string; v: T } | undefined)?.v
+  }
+
+  async setMeta(k: string, v: unknown) {
+    await this.db.put('meta', { k, v })
+  }
 }
 
 /** Used when IndexedDB is unavailable — the app still works for the session. */
@@ -155,14 +171,24 @@ class MemoryRepository implements Repository {
   async removePhoto(id: string) {
     this.photos.delete(id)
   }
+  private meta = new Map<string, unknown>()
+  async getMeta<T>(k: string) {
+    return this.meta.get(k) as T | undefined
+  }
+  async setMeta(k: string, v: unknown) {
+    this.meta.set(k, v)
+  }
 }
 
 export async function openRepository(): Promise<Repository> {
   try {
-    const open = openDB('hearth', 1, {
-      upgrade(db) {
-        for (const name of STORES) db.createObjectStore(name, { keyPath: KEYS[name] })
-        db.createObjectStore('photos', { keyPath: 'id' })
+    const open = openDB('hearth', 2, {
+      upgrade(db, oldVersion) {
+        if (oldVersion < 1) {
+          for (const name of STORES) db.createObjectStore(name, { keyPath: KEYS[name] })
+          db.createObjectStore('photos', { keyPath: 'id' })
+        }
+        if (oldVersion < 2) db.createObjectStore('meta', { keyPath: 'k' })
       },
     })
     // Some embedded/private contexts never resolve the open request.
