@@ -1,5 +1,7 @@
 # Going live on Cloudflare
 
+**Live:** https://hearth.christopher-m-dooley.workers.dev (Access team `lively-pine-edcd`, policy `Family`)
+
 Everything here is on Cloudflare's free plans. Zero Trust and R2 ask for a card
 on file; the free tiers aren't charged.
 
