@@ -355,6 +355,72 @@ Bake 30–35 minutes, until deep golden. It should sound hollow underneath.`),
     added: 20,
     cols: ['col_bread', 'col_breakfast', 'col_family'],
   },
+  {
+    id: 'r_zwetschgenkuchen',
+    title: 'Sourdough Zwetschgenkuchen',
+    description: 'Plum sheet cake on an enriched sourdough base instead of the usual Hefeteig. Mix the dough the evening before, bake the next day.',
+    kind: 'mine',
+    creatorId: 'c_chris',
+    ownerId: 'u_chris',
+    createdBy: 'u_chris',
+    category: 'cake',
+    tags: ['plums', 'zwetschgen', 'overnight', 'sheet cake', 'autumn'],
+    prepMinutes: 45,
+    bakeMinutes: 45,
+    totalMinutes: 13 * 60,
+    yield: { amount: 1, unit: 'tray (30 × 40 cm), about 20 pieces' },
+    oven: { value: 180, unit: 'C', note: '160 °C fan · lower-middle rack' },
+    equipment: ['30 × 40 cm baking tray', 'Rolling pin'],
+    art: 'bar',
+    ingredients: [
+      ...ing(`
+150 g active white starter, fed and at its peak (⅔ cup)
+450 g flour, Type 550 (3¼ cups)
+200 g milk, lukewarm (scant 1 cup)
+1 egg
+70 g sugar (⅓ cup)
+70 g butter, soft (5 tbsp)
+6 g salt (1 tsp)
+1/2 tsp lemon zest (optional)`, 'Dough'),
+      ...ing(`
+2 kg Zwetschgen, stoned and quartered lengthwise (4½ lb)
+30 g ground almonds (⅓ cup)
+30 g butter, melted, for brushing the crust (2 tbsp)`, 'Filling'),
+      ...ing(`
+50 g sugar (¼ cup)
+50 g brown sugar, packed (¼ cup)
+16 g vanilla sugar, 2 packets
+2 tsp ground cinnamon`, 'Spiced sugar topping (the one I made)'),
+      ...ing(`
+50 g sugar, for the plums (¼ cup)
+150 g flour (1 cup)
+100 g sugar (½ cup)
+100 g butter, cold (7 tbsp)
+1 tsp ground cinnamon`, 'Or: streusel topping'),
+    ],
+    steps: steps(`
+Mix the starter, flour, milk, egg, sugar, salt and lemon zest. Knead for 5 minutes.
+Work in the soft butter a little at a time, then knead 5–8 minutes more until the dough is smooth and elastic.
+Cover and leave at about 20 °C until roughly doubled, usually 10–12 hours. Go by size, not the clock. In a warm kitchen, move it to the fridge after 3–4 hours.
+Grease or line the tray. Roll the dough out, lay it in and push it into the corners. A slightly thick base is fine — it soaks up the plum juice.
+Spiced sugar: mix the topping and scatter half over the dough, then the ground almonds. Streusel: scatter only the ground almonds over the dough.
+Stand the plum quarters upright in tight, overlapping rows, like roof tiles.
+Spiced sugar: cover the plums with the rest of the spiced sugar. Streusel: sprinkle the plums with the 50 g sugar.
+Leave to rise until the edges look puffy, 1–2 hours (less if the base is already thick). Streusel: meanwhile rub the streusel ingredients into crumbs and chill them. Preheat the oven to 180 °C.
+Streusel: scatter the crumbs over the plums. Bake for 20 minutes.
+Brush the exposed crust edges with the melted butter. Bake 20–25 minutes more, until the underside is golden and the plums bubble. Lay foil loosely on top if it browns too fast.
+Leave in the tray for at least 30 minutes so the juices set. Serve with Schlagsahne.`),
+    recipeNotes: [
+      'Two toppings: the spiced sugar (what I made) or streusel. The steps say which applies to which.',
+      'Sour Zwetschgen need the sugar — don’t cut it back.',
+      'Keep the ground almonds in either way; they stop the base going soggy.',
+      'With a thicker base, lift a corner before taking it out: the underside should be golden, not pale.',
+      'Plain Hessian version: skip both toppings and dust with sugar after baking.',
+      'Lisa Bass (Farmhouse on Boone) has no plum kuchen; her sourdough cinnamon roll dough is the closest enriched base if you want to try hers.',
+    ].join('\n\n'),
+    added: 33,
+    cols: ['col_cakes', 'col_sourdough', 'col_desserts'],
+  },
 
   // ---------- external creators: reference entries (link + our notes) ----------
   ref('r_fob_sandwich', 'Sourdough Sandwich Bread', 'c_fob', 'sourdough', 'loaf', 'https://www.farmhouseonboone.com/?p=35891', 'Lisa Bass', ['sandwich', 'loaf pan'], 3, ['col_bread', 'col_sourdough']),
@@ -408,7 +474,7 @@ const bakes: BakeEntry[] = [
  * Bump when the sample library gains records. Existing devices get the new
  * records merged in (nothing of theirs is overwritten); see mergeSeed().
  */
-export const SEED_VERSION = 2
+export const SEED_VERSION = 3
 /** Seed records retired in later versions; removed only if nobody has used them. */
 export const RETIRED_SEED_IDS = ['r_fob_ww']
 

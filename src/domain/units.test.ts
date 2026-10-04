@@ -84,6 +84,8 @@ describe('dual measures', () => {
     expect(line('250 g discard (1 cup)', 1, 'metric')).toBe('250 g (1 cup)')
     expect(line('250 g discard (1 cup)', 1, 'us')).toBe('1 cup (250 g)')
     expect(line('250 g discard (1 cup)', 2, 'us')).toBe('2 cups (500 g)')
+    expect(line('150 g starter (⅔ cup)', 1, 'metric')).toBe('150 g (⅔ cup)')
+    expect(line('70 g sugar (⅓ cup)', 1, 'metric')).toBe('70 g (⅓ cup)')
     expect(line('3 tsp dried yeast (9 g)', 1, 'metric')).toBe('9 g (3 tsp)')
     expect(line('3 tsp dried yeast (9 g)', 1, 'us')).toBe('3 tsp (9 g)')
   })

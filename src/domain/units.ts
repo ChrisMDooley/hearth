@@ -178,9 +178,12 @@ const ALLOWED: Partial<Record<UnitId, number[]>> = {
   lb: [0, 1 / 4, 1 / 2, 3 / 4, 1],
 }
 
+/** A recipe's own cup measures, shown as published: thirds and eighths both kept. */
+const FINE_CUP = [0, 1 / 8, 1 / 4, 1 / 3, 3 / 8, 1 / 2, 5 / 8, 2 / 3, 3 / 4, 7 / 8, 1]
+
 export function formatNumber(unit: UnitId, value: number, approx: boolean, fine = false): string {
   if (!isFinite(value)) return ''
-  const allowed = fine && unit === 'cup' ? ALLOWED.tsp : ALLOWED[unit]
+  const allowed = fine && unit === 'cup' ? FINE_CUP : ALLOWED[unit]
   if (allowed) return fraction(value, allowed)
   if (unit === 'kg' || unit === 'l') return trimNum(round(value, value < 10 ? 0.05 : 0.1))
   if (unit === 'oz' || unit === 'floz') return trimNum(round(value, value < 4 ? 0.25 : 0.5))
