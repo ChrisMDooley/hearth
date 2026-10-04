@@ -22,6 +22,8 @@ export default defineConfig(({ mode }) => {
         ? viteSingleFile()
         : VitePWA({
             registerType: 'autoUpdate',
+            // The site is behind a login, so the manifest must be fetched with cookies.
+            useCredentials: true,
             includeAssets: ['icons/icon.svg'],
             manifest: {
               name: 'Hearth — our family baking book',
